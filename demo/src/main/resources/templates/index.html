@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="url"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .alert {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result-item {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .result-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .short-url {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .short-url:hover {
+            text-decoration: underline;
+        }
+        .copy-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 URL Shortener</h1>
+        
+        <!-- Error message from URL parameter -->
+        <div th:if="${param.error}" class="alert alert-danger">
+            <span th:text="${param.error}">Error message</span>
+        </div>
+        
+        <!-- General error message -->
+        <div th:if="${error}" class="alert alert-danger">
+            <span th:text="${error}">Error message</span>
+        </div>
+        
+        <!-- URL Shortening Form -->
+        <form th:action="@{/shorten}" th:object="${shortenUrlRequest}" method="post">
+            <div class="form-group">
+                <label for="url">Enter URL to shorten:</label>
+                <input type="url" 
+                       id="url" 
+                       th:field="*{url}" 
+                       placeholder="https://example.com/very-long-url"
+                       required>
+                <div th:if="${#fields.hasErrors('url')}" class="error">
+                    <span th:errors="*{url}">URL error</span>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn">Shorten URL</button>
+        </form>
+        
+        <!-- Result Display -->
+        <div th:if="${result}" class="alert alert-success">
+            <h3>✅ URL Shortened Successfully!</h3>
+            
+            <div class="result-item">
+                <span class="result-label">Short URL:</span>
+                <a th:href="${result.shortUrl}" 
+                   th:text="${result.shortUrl}" 
+                   class="short-url" 
+                   target="_blank">Short URL</a>
+                <button class="copy-btn" onclick="copyToClipboard(this)" th:data-url="${result.shortUrl}">
+                    Copy
+                </button>
+            </div>
+            
+            <div class="result-item">
+                <span class="result-label">Original URL:</span>
+                <span th:text="${result.originalUrl}">Original URL</span>
+            </div>
+            
+            <div class="result-item">
+                <span class="result-label">Short Code:</span>
+                <span th:text="${result.shortCode}">Short Code</span>
+            </div>
+            
+            <div class="result-item">
+                <span class="result-label">Created:</span>
+                <span th:text="${#temporals.format(result.createdAt, 'yyyy-MM-dd HH:mm:ss')}">Created At</span>
+            </div>
+            
+            <div th:if="${result.expiresAt}" class="result-item">
+                <span class="result-label">Expires:</span>
+                <span th:text="${#temporals.format(result.expiresAt, 'yyyy-MM-dd HH:mm:ss')}">Expires At</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function copyToClipboard(button) {
+            const url = button.getAttribute('data-url');
+            navigator.clipboard.writeText(url).then(function() {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.backgroundColor = '#6c757d';
+                
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = '#28a745';
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy URL to clipboard');
+            });
+        }
+    </script>
+</body>
+</html>
